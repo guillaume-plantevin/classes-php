@@ -14,51 +14,49 @@
         public $firstname = '';
         public $lastname = '';
 
-        private $dbc;
+        private $dbConnect;
         private $dbclosing;
 
-        public $host = '127.0.0.1';
+        public $host = 'localhost';
         // public $port = 3306;
         public $db   = 'classes';
         public $user = 'root';
         public $pass = '';
         // public $charset = 'utf8mb4';
         // public $charset = 'utf8';
-
+        
         // 
         public function __construct() {
-            $this->dbc = mysqli_connect($this->host, $this->user, $this->pass, $this->db);
-
-            // controlData($this->dbc, '$dbc');
-            if ($this->dbc) {
-                echo "<p style='color:green'>connection established</p>";
+            $this->dbConnect = new mysqli($this->host, $this->user, $this->pass, $this->db);
+            if($this->dbConnect === false){
+                die("ERROR: Could not connect. " . $this->dbConnect->connect_error);
             }
-            else {
-                print '<p style="color:red;">Could not connect to the database:<br>' . mysqli_connect_error() . '.</p>';
-                exit();
-            }
+            // Feedback, to erase after
+            echo "Connect Successfully. Host info: " . $this->dbConnect->host_info;
         }
 
         public function register($login, $password, $email, $firstname, $lastname) {
             // Crée l’utilisateur en base de données. 
             // Retourne un tableau(array) contenant l’ensemble des informations concernant l’utilisateur créé.
+            $password = md5($password);
+			$sql = "SELECT * FROM utlisateurs WHERE login ='$login' OR email = '$email'; ";
+ 
+			//checking if the username or email is available in database classes
+			$check =  $this->dbConnect->query($sql);
+			$count_row = $check->num_rows;
+ 
+			//if the username is not in db then insert to the table
+			if ($count_row == 0){
+				$sql1="INSERT INTO utilisateurs VALUES (login ='$login', password ='$password', email ='$email', firstname = $firstname, lastname = $lastname)";
+				$result = mysqli_query($this->db,$sql1) or die(mysqli_connect_errno()."Data cannot inserted");
+        		return $result;
+			}
+			else { 
+                return false;
+            }
+		}
+ 
 
-
-            // $stmt = $this->dbc->prepare("SELECT * FROM utlisateurs WHERE login = ?");
-            $stmt = $this->dbc->prepare("INSERT INTO utilisateurs (login, password, email, firstname, lastname) 
-                                        VALUES ($this->login, $this->password, $this->email, $this->firstname, $this->lastname);");
-
-            $stmt->bind_param("sssss", $this->login, $this->password, $this->email, $this->firstname, $this->lastname);
-            $stmt->execute();
-            $reg = $stmt->get_result()->fetch_assoc();
-
-
-            // $query = "INSERT INTO utilisateurs (login, password, email, firstname, lastname) 
-            //             VALUES ($this->login, $this->password, $this->email, $this->firstname, $this->lastname);";
-            // $query = 'INSERT INTO utilisateurs (login, password) VALUES ("toto", "123123")';
-            // $reg = mysqli_query($this->dbc, $query);
-            controlData($reg, '$reg');
-            var_dump($reg);
         }
         public function connect($login, $password) {
             // Connecte l’utilisateur, modifie les attributs présents dans la classe et
