@@ -1,12 +1,5 @@
 <?php
     require_once('functions/functions.php');
-    /*
-        Consignes:
-        Créez un fichier nommé “user-pdo.php”. Dans ce fichier, créez une classe
-        “userpdo” en vous basant sur la classe user que vous avez créé dans le job1. 
-        
-        => Vos requêtes SQL doivent maintenant être faites avec pdo.
-    */
     class userpdo {
         private $id;
 
@@ -27,7 +20,8 @@
             // See the "errors" folder for details...
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // just to verify it is working
+            // FLASH MESSAGE
+            // NOTE: PLUSIEURS SONT UTLISES DANS LE CODE
             echo '<p style="color:green;text-transform:uppercase;">Connection to DB: OK</p>';
         }
 
@@ -35,7 +29,8 @@
             // Crée l’utilisateur en base de données. 
             // Retourne un tableau contenant l’ensemble des informations concernant l’utilisateur créé.
 
-            // Verification que le compte n'existe pas deja
+            // Verification que le login avec ce mail n'existe pas déjà
+            // NOTE: variation possible: vérifier que l'email n'est pas déjà utilisé lui non plus.
             $verifying = "SELECT * FROM utilisateurs WHERE login = :login AND email = :email";
 
             $stmt = $this->pdo->prepare($verifying);
@@ -47,7 +42,7 @@
 
             $user = $stmt->fetchAll();
 
-            // EXISTE deja
+            // EXISTE déjà
             if (!empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce login est déjà utilisé.</p>';
                 return;
@@ -111,7 +106,11 @@
                     $this->$key = $value;
                 }
                 // garde en memoire le mot de passe et non pas le hash
-                $user['password'] = $password;
+                $this->password = htmlentities($password);
+
+                // renvoi le mot de passe enregistré et non pas le hash
+                $user['password'] = htmlentities($password);
+
                 return $user;
             }
         }
@@ -130,6 +129,7 @@
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est as connecté.</p>';
             }
         }
+
         public function delete() {
             // Supprime et déconnecte l’utilisateur.
 
@@ -191,49 +191,92 @@
                 return;
             }
         }
+
         public function isConnected​() {
             // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.  
             // var_dump_pre($this->login, '$this->login');
-            if (empty($this->login) && !isset($this->login)) {
+            if (empty($this->id) && !isset($this->id)) {
                 return FALSE;
             }
             else {
                 return TRUE;
             }
-
         }
+
         public function getAllInfos() {
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
-            $infoUser = [
-                'id' => $this->id,
-                'login' => $this->login,
-                'password' => $this->password,
-                'email' => $this->email,
-                'firstname' => $this->firstname,
-                'lastname' => $this->lastname
-            ];
-            return  $infoUser;
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
+                return;
+            }
+            else {
+                $infoUser = [
+                    'id' => $this->id,
+                    'login' => $this->login,
+                    'password' => $this->password,
+                    'email' => $this->email,
+                    'firstname' => $this->firstname,
+                    'lastname' => $this->lastname
+                ];
+                return  $infoUser;
+            }
         }
+
         public function getEmail() {
             // Retourne l’adresse email de l’utilisateur connecté.
-            return $this->email;
-
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir l\'email n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->email;
         }
+
         public function getFirstname() {
             // Retourne le firstname de l’utilisateur connecté.
-            return $this->firstname;
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir le prénom n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->firstname;
         }
+
         public function getLastname() {
             // Retourne le lastname de l’utilisateur connecté.
-            return $this->lastname;
-
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir le nom n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->lastname;
         }
+
         public function refresh() {
             // Met à jour les attributs de la classe à partir de la base de données.
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return;
+            }
+            else {
+                $sql = "SELECT * FROM utilisateurs WHERE id = :id";
 
+                $stmt = $this->pdo->prepare($sql);
+    
+                $stmt->execute([':id' => $this->id]);
+
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                foreach ($user as $key => $value) 
+                    $this-> $key = $value;
+                echo '<p style="color:green;text-transform:uppercase;">Attributs mis à jour.</p>';
+            }
         }
+        // Fonction utilisée pour debuguer
         public function __destruct() {
+
             echo 'FUNCTION __DESTRUCT(): ';
+
             $allInfoUser = [
                 'id' => $this->id,
                 'login' => $this->login,
