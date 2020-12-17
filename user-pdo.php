@@ -1,6 +1,5 @@
 <?php
     require_once('functions/functions.php');
-
     /*
         Consignes:
         Créez un fichier nommé “user-pdo.php”. Dans ce fichier, créez une classe
@@ -18,55 +17,43 @@
         public $lastname = FALSE;
 
         private $pdo;
-        private $logged = FALSE;
+        // private $logged = FALSE;
         
         public function getId() {
             return $this->id;
         }
 
         public function __construct() {
-            $this->pdo = new PDO('mysql:host=localhost;dbname=classes', 
-            'root', '');
+            $this->pdo = new PDO('mysql:host=localhost;dbname=classes', 'root', '');
             // See the "errors" folder for details...
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // just to verify it is working
-            echo '<p style="color:green;text-transform:uppercase;">Connection: OK</p>';
+            echo '<p style="color:green;text-transform:uppercase;">Connection to DB: OK</p>';
         }
+
         public function register($login, $password, $email, $firstname, $lastname) {
             // Crée l’utilisateur en base de données. 
             // Retourne un tableau contenant l’ensemble des informations concernant l’utilisateur créé.
 
-            // RAJOUT: 
-            // vérifie si l'utilisateur existe déjà
-            // Si c'est le cas, ne rajoute pas l'utilisateur en DB
-
-            $this->login = htmlentities($login);
-            $this->password = htmlentities($password);
-            $this->email = htmlentities($email);
-            $this->firstname = htmlentities($firstname);
-            $this->lastname = htmlentities($lastname);
-
-            // verifying if login already exists
-            $verifying = "SELECT * FROM utilisateurs WHERE login = :login";
-
-            // DEBUG: the query
-            // echo "<pre>" . $verifying . "</pre>";
+            // Verification que le compte n'existe pas deja
+            $verifying = "SELECT * FROM utilisateurs WHERE login = :login AND email = :email";
 
             $stmt = $this->pdo->prepare($verifying);
 
-            $stmt->execute([':login' => $this->login]);
+            $stmt->execute([
+                ':login' => htmlentities($login),
+                ':email' => htmlentities($email)
+            ]);
 
             $user = $stmt->fetchAll();
-
-            // DEBUG: see the datas, if any exists
-            // print_r_pre($user, '$user:');
 
             // EXISTE deja
             if (!empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce login est déjà utilisé.</p>';
                 return;
             }
+
             // N'EXISTE PAS ==> CREATION
             else {
                 $sql = "INSERT INTO utilisateurs (
@@ -74,28 +61,28 @@
                     VALUES (
                     :login, :password, :email, :firstname, :lastname)";
     
-                // DEBUG: verifying the query
-                echo("<pre>\n".$sql."\n</pre>\n");
     
                 $stmt = $this->pdo->prepare($sql);
     
                 $stmt->execute(array(
-                    ':login' => $this->login,
-                    ':password' => hash('sha256', $this->password),
-                    ':email' => $this->email,
-                    'firstname' => $this->firstname,
-                    'lastname' => $this->lastname));
+                    ':login' => htmlentities($login),
+                    ':password' => hash('sha256', htmlentities($password)),
+                    ':email' => htmlentities($email),
+                    ':firstname' => htmlentities($firstname),
+                    ':lastname' => htmlentities($lastname)
+                ));
                 
-                // DEBUG
+                // DEBUG: FLASH MESSAGE
                 echo '<p style="color:green;text-transform:uppercase;">utilisateur enregistré.</p>';
-
+                
                 $infoUser = [
-                    'login' => $this->login,
-                    'password' => $this->password,
-                    'email' => $this->email,
-                    'firstname' => $this->firstname,
-                    'lastname' => $this->lastname
-                    ];
+                    'login' => htmlentities($login),
+                    'password' => htmlentities($password),
+                    'email' => htmlentities($email),
+                    'firstname' => htmlentities($firstname),
+                    'lastname' => htmlentities($lastname)
+                ];
+
                 return $infoUser;            
             }
         }
@@ -104,107 +91,114 @@
             // Connecte l’utilisateur, modifie les attributs présents dans la classe et
             // retourne un tableau contenant l’ensemble de ses informations.
 
-            // SET attributes
-            $this->login = htmlentities($login);
-            $this->password = htmlentities($password);
-
             // VERIFIER que l'utilisateur existe en DB
             $verifying = "SELECT * FROM utilisateurs WHERE login = :login AND password = :password";
-
+            
             $stmt = $this->pdo->prepare($verifying);
 
             $stmt->execute([
-                ':login' => $this->login,
-                ':password' => hash('sha256', $this->password)
+                ':login' => htmlentities($login),
+                ':password' => hash('sha256', htmlentities($password))
             ]);
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // DEBUG: show data
-            echo 'INSIDE connect function:';
-            print_r_pre($user, $this->login);
-
             if (empty($user)) {
-                echo '<p style="color:red;text-transform:uppercase;">Ce compte n\'existe pas.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Ce compte n\'existe pas ou les informations ne sont pas exactes.</p>';
                 return FALSE;
             }
             else {
-                $this->logged = TRUE;
-                $user['logged'] = $this->logged;
-                echo 'END of connect function';
+                foreach ($user as $key => $value) {
+                    $this->$key = $value;
+                }
+                // garde en memoire le mot de passe et non pas le hash
+                $user['password'] = $password;
                 return $user;
             }
         }
         public function disconnect​() {
             // Déconnecte l’utilisateur.
-            if ($this->logged) {
-                $this->logged = false;
+
+            if (isset($this->login) && !empty($this->login)) {
+                $this->id = null;
+                $this->login = null;
+                $this->password = null;
+                $this->email = null;
+                $this->firstname = null;
+                $this->lastname = null;
             }
-                $this->id = false;
-                $this->login = false;
-                $this->password = false;
-                $this->email = false;
-                $this->firstname = false;
-                $this->lastname = false;
+            else {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est as connecté.</p>';
+            }
         }
         public function delete() {
             // Supprime et déconnecte l’utilisateur.
-            if (!$this->logged) {
+
+            if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return;
             }
             else {
-                $this->logged = FALSE;
-                
-
                 $sql = "DELETE FROM utilisateurs 
                         WHERE id = :id";
 
                 $stmt = $this->pdo->prepare($sql);
 
-                $stmt->execute(array(
-                    ':id' => $this->id
-                ));
+                $stmt->execute(array(':id' => $this->id));
 
-                $this->id = false;
-                $this->login = false;
-                $this->password = false;
-                $this->email = false;
-                $this->firstname = false;
-                $this->lastname = false;
+                $this->id = null;
+                $this->login = null;
+                $this->password = null;
+                $this->email = null;
+                $this->firstname = null;
+                $this->lastname = null;
 
                 echo '<p style="color:green;text-transform:uppercase;">Profil supprimé de la Base de Données.</p>';
                 return;
             }
         }
+
         public function update​($login, $password, $email, $firstname, $lastname) {
             // Modifie les informations de l’utilisateur en base de données.
-            $sql = "UPDATE utilisateurs SET 
-                    login = :login, 
-                    password = :password, 
-                    email = :email, 
-                    firstname = :firstname,
-                    lastname = :lastname
-                    WHERE login = :login 
-                    AND 
-                    id = :id";
 
-            $stmt = $this->pdo->prepare($sql);
+            if (empty($this->id) && !isset($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return;
+            }
+            else {
+                $sql = "UPDATE utilisateurs 
+                        SET 
+                        login = :login, 
+                        password = :password, 
+                        email = :email, 
+                        firstname = :firstname,
+                        lastname = :lastname
+                        WHERE login = :login 
+                        AND 
+                        id = :id";
+    
+                $stmt = $this->pdo->prepare($sql);
+    
+                $stmt->execute(array(
+                    ':login' => htmlentities($login),
+                    ':password' => hash('sha256', htmlentities($password)),
+                    ':email' => htmlentities($email),
+                    ':firstname' => htmlentities($firstname),
+                    ':lastname' => htmlentities($lastname),
+                    ':id' => $this->id
+                ));
 
-            $stmt->execute(array(
-                ':login' => htmlentities($login),
-                ':password' => htmlentities($password),
-                ':email' => htmlentities($email),
-                ':firstname' => htmlentities($firstname),
-                ':lastname' => htmlentities($lastname),
-                ':id' => $this->id
-            ));
+                echo '<p style="color:green;text-transform:uppercase;">Le profil a bien été mis à jour.</p>';
+                return;
+            }
         }
         public function isConnected​() {
             // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.  
-            if ($this->logged)
-                return TRUE;
-            else 
+            if (empty($this->id) && !isset($this->id)) {
                 return FALSE;
+            }
+            else 
+                return TRUE;
 
         }
         public function getAllInfos() {
@@ -238,19 +232,20 @@
 
         }
         public function __destruct() {
+            echo 'FUNCTION __DESTRUCT(): ';
             $allInfoUser = [
                 'id' => $this->id,
                 'login' => $this->login,
                 'password' => $this->password,
                 'email' => $this->email,
                 'firstname' => $this->firstname,
-                'lastname' => $this->lastname,
-                'logged' => $this->logged,
+                'lastname' => $this->lastname
             ];
             // DEBUG
-            // echo $this->login . ':<br>';
-            echo 'END of destruct(): ';
-            print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login);
+            echo $this->login . ':<br>';
+            // echo 'END of destruct(): ';
+            print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
             return;
         }
     }
+?>
