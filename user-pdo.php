@@ -8,16 +8,15 @@
         => Vos requêtes SQL doivent maintenant être faites avec pdo.
     */
     class userpdo {
-        private $id = FALSE;
+        private $id;
 
-        public $login = FALSE;
-        public $password = FALSE;
-        public $email = FALSE;
-        public $firstname = FALSE;
-        public $lastname = FALSE;
+        public $login;
+        public $password;
+        public $email;
+        public $firstname;
+        public $lastname;
 
         private $pdo;
-        // private $logged = FALSE;
         
         public function getId() {
             return $this->id;
@@ -194,11 +193,13 @@
         }
         public function isConnected​() {
             // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.  
-            if (empty($this->id) && !isset($this->id)) {
+            // var_dump_pre($this->login, '$this->login');
+            if (empty($this->login) && !isset($this->login)) {
                 return FALSE;
             }
-            else 
+            else {
                 return TRUE;
+            }
 
         }
         public function getAllInfos() {
