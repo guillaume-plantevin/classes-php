@@ -10,14 +10,9 @@
         public $lastname;
 
         private $pdo;
-        
-        public function getId() {
-            return $this->id;
-        }
 
         public function __construct() {
             $this->pdo = new PDO('mysql:host=localhost;dbname=classes', 'root', '');
-            // See the "errors" folder for details...
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
             // FLASH MESSAGE
@@ -30,8 +25,7 @@
             // Retourne un tableau contenant l’ensemble des informations concernant l’utilisateur créé.
 
             // Verification que le login avec ce mail n'existe pas déjà
-            // NOTE: variation possible: vérifier que l'email n'est pas déjà utilisé lui non plus.
-            $verifying = "SELECT * FROM utilisateurs WHERE login = :login AND email = :email";
+            $verifying = "SELECT * FROM utilisateurs WHERE login = :login OR email = :email";
 
             $stmt = $this->pdo->prepare($verifying);
 
@@ -44,38 +38,27 @@
 
             // EXISTE déjà
             if (!empty($user)) {
-                echo '<p style="color:red;text-transform:uppercase;">Ce login est déjà utilisé.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Ce login et/ou email sont déjà utilisés.</p>';
                 return;
             }
-
             // N'EXISTE PAS ==> CREATION
             else {
                 $sql = "INSERT INTO utilisateurs (
                     login, password, email, firstname, lastname) 
-                    VALUES (
-                    :login, :password, :email, :firstname, :lastname)";
-    
+                    VALUES (:login, :password, :email, :firstname, :lastname)";
     
                 $stmt = $this->pdo->prepare($sql);
     
-                $stmt->execute(array(
+                $stmt->execute($infoUser = [
                     ':login' => htmlentities($login),
-                    ':password' => hash('sha256', htmlentities($password)),
+                    ':password' => password_hash(htmlentities($password), PASSWORD_DEFAULT),
                     ':email' => htmlentities($email),
                     ':firstname' => htmlentities($firstname),
                     ':lastname' => htmlentities($lastname)
-                ));
+                ]);
                 
                 // DEBUG: FLASH MESSAGE
                 echo '<p style="color:green;text-transform:uppercase;">utilisateur enregistré.</p>';
-                
-                $infoUser = [
-                    'login' => htmlentities($login),
-                    'password' => htmlentities($password),
-                    'email' => htmlentities($email),
-                    'firstname' => htmlentities($firstname),
-                    'lastname' => htmlentities($lastname)
-                ];
 
                 return $infoUser;            
             }
@@ -86,22 +69,33 @@
             // retourne un tableau contenant l’ensemble de ses informations.
 
             // VERIFIER que l'utilisateur existe en DB
-            $verifying = "SELECT * FROM utilisateurs WHERE login = :login AND password = :password";
-            
+            $verifying = "SELECT * FROM utilisateurs WHERE login = :login";
+
             $stmt = $this->pdo->prepare($verifying);
 
-            $stmt->execute([
-                ':login' => htmlentities($login),
-                ':password' => hash('sha256', htmlentities($password))
-            ]);
+            $inputLogin = htmlentities($login);
+            // $inputHash = password_hash(htmlentities($password), PASSWORD_DEFAULT);
 
+            // echo 'inpuHash: ' . $inputHash;
+            $stmt->execute(array (
+                ':login' => $inputLogin
+            ));
+                
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // DEBUG
+            // print_r_pre($user, '$user from DB:');
+
             if (empty($user)) {
-                echo '<p style="color:red;text-transform:uppercase;">Ce compte n\'existe pas ou les informations ne sont pas exactes.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Ce compte n\'existe pas ou les informations fournies ne sont pas exactes.</p>';
+                return FALSE;
+            }
+            else if (!password_verify($password, $user['password'])) {
+                echo '<p style="color:red;text-transform:uppercase;">Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
                 return FALSE;
             }
             else {
+                // change les attributs
                 foreach ($user as $key => $value) {
                     $this->$key = $value;
                 }
@@ -138,8 +132,7 @@
                 return;
             }
             else {
-                $sql = "DELETE FROM utilisateurs 
-                        WHERE id = :id";
+                $sql = "DELETE FROM utilisateurs WHERE id = :id";
 
                 $stmt = $this->pdo->prepare($sql);
 
@@ -152,7 +145,8 @@
                 $this->firstname = null;
                 $this->lastname = null;
 
-                echo '<p style="color:green;text-transform:uppercase;">Profil supprimé de la Base de Données.</p>';
+                // FLASH msg
+                echo '<p style="color:green;text-transform:uppercase;">Profil supprimé avec succès!.</p>';
                 return;
             }
         }
@@ -172,22 +166,21 @@
                         email = :email, 
                         firstname = :firstname,
                         lastname = :lastname
-                        WHERE login = :login 
-                        AND 
+                        WHERE 
                         id = :id";
     
                 $stmt = $this->pdo->prepare($sql);
     
                 $stmt->execute(array(
                     ':login' => htmlentities($login),
-                    ':password' => hash('sha256', htmlentities($password)),
+                    ':password' => password_hash(htmlentities($password), PASSWORD_DEFAULT),
                     ':email' => htmlentities($email),
                     ':firstname' => htmlentities($firstname),
                     ':lastname' => htmlentities($lastname),
                     ':id' => $this->id
                 ));
 
-                echo '<p style="color:green;text-transform:uppercase;">Le profil a bien été mis à jour.</p>';
+                echo '<p style="color:green;text-transform:uppercase;">Le profil mis à jour avec succès.</p>';
                 return;
             }
         }
@@ -225,7 +218,7 @@
         public function getEmail() {
             // Retourne l’adresse email de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
-                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir l\'email n\'est pas connecté.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 return FALSE;
             }
             else
@@ -235,7 +228,7 @@
         public function getFirstname() {
             // Retourne le firstname de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
-                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir le prénom n\'est pas connecté.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 return FALSE;
             }
             else
@@ -245,7 +238,7 @@
         public function getLastname() {
             // Retourne le lastname de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
-                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir le nom n\'est pas connecté.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 return FALSE;
             }
             else
@@ -269,27 +262,20 @@
 
                 foreach ($user as $key => $value) 
                     $this-> $key = $value;
-                echo '<p style="color:green;text-transform:uppercase;">Attributs mis à jour.</p>';
+                echo '<p style="color:green;text-transform:uppercase;">Attributs mis à jour avec succès.</p>';
             }
         }
-        // Fonction utilisée pour debuguer
-        public function __destruct() {
-
-            echo 'FUNCTION __DESTRUCT(): ';
-
-            $allInfoUser = [
-                'id' => $this->id,
-                'login' => $this->login,
-                'password' => $this->password,
-                'email' => $this->email,
-                'firstname' => $this->firstname,
-                'lastname' => $this->lastname
-            ];
-            // DEBUG
-            echo $this->login . ':<br>';
-            // echo 'END of destruct(): ';
-            print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
-            return;
-        }
+        // public function __destruct() {
+        //     $allInfoUser = [
+        //         'id' => $this->id,
+        //         'login' => $this->login,
+        //         'password' => $this->password,
+        //         'email' => $this->email,
+        //         'firstname' => $this->firstname,
+        //         'lastname' => $this->lastname
+        //     ];
+        //     /* DEBUG */
+        //     print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
+        //     return;
+        // }
     }
-?>

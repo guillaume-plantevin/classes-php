@@ -17,6 +17,12 @@
         }
         function connect($host, $username, $password, $db) {
             // Ferme la connexion au serveur SQL en cours s’il y en a une et en ouvre une nouvelle.
+            /*
+                if (already connected)
+                    close connection
+                else {
+                    open connection
+                }
 
         }
         function destructeur() {

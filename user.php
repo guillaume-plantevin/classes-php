@@ -7,15 +7,16 @@
 
     // require_once('connect.php');
     class user {
-        private $id = '';
-        public $login = '';
-        public $email = '';
-        public $password = '';
-        public $firstname = '';
-        public $lastname = '';
+        private $id;
 
-        private $dbConnect;
-        private $dbclosing;
+        public $login;
+        public $email;
+        public $password;
+        public $firstname;
+        public $lastname;
+
+        private $mysqli;
+        // private $dbclosing;
 
         public $host = 'localhost';
         // public $port = 3306;
@@ -27,36 +28,70 @@
         
         // 
         public function __construct() {
-            $this->dbConnect = new mysqli($this->host, $this->user, $this->pass, $this->db);
-            if($this->dbConnect === false){
-                die("ERROR: Could not connect. " . $this->dbConnect->connect_error);
+            $this->mysqli = new mysqli($this->host, $this->user, $this->pass, $this->db);
+            
+            // Check connection
+            if ($this->mysqli->connect_error) {
+                echo '<p style="color:red;text-transform:uppercase;">Échec de la connexion:</p>';
+                die("$this->mysqli->connect_errno: $this->mysqli->connect_error");
             }
-            // Feedback, to erase after
-            echo "Connect Successfully. Host info: " . $this->dbConnect->host_info;
+            echo '<p style="color:green;text-transform:uppercase;">Connection to DB: OK</p>';
+            echo "Host info: " . $this->mysqli->host_info;
         }
 
         public function register($login, $password, $email, $firstname, $lastname) {
             // Crée l’utilisateur en base de données. 
             // Retourne un tableau(array) contenant l’ensemble des informations concernant l’utilisateur créé.
-            $password = md5($password);
-			$sql = "SELECT * FROM utlisateurs WHERE login ='$login' OR email = '$email'; ";
- 
-			//checking if the username or email is available in database classes
-			$check =  $this->dbConnect->query($sql);
-			$count_row = $check->num_rows;
+
+            // sanitize input data
+            $saLogin = htmlentities($login);
+            $pHash = password_hash($password, PASSWORD_DEFAULT);
+            $saEmail = htmlentities($email);
+            $saFirstname = htmlentities($firstname);
+            $saLastname = htmlentities($lastname);
+            
+            $sql = "SELECT * FROM utilisateurs WHERE login = ? OR email = ?"; 
+
+            $stmt = $this->mysqli->prepare($sql); 
+            $stmt->bind_param('ss', $saLogin, $saEmail);
+            $stmt->execute();
+            // get the mysqli result
+            $result = $stmt->get_result(); 
+            // fetch the data   
+            $user = $result->fetch_assoc(); 
+
+            // $userInfo = $user;
+            // print_r_pre($user, '$user, while verifying:');
  
 			//if the username is not in db then insert to the table
-			if ($count_row == 0){
-				$sql1="INSERT INTO utilisateurs VALUES (login ='$login', password ='$password', email ='$email', firstname = $firstname, lastname = $lastname)";
-				$result = mysqli_query($this->db,$sql1) or die(mysqli_connect_errno()."Data cannot inserted");
-        		return $result;
+			if (empty($user)) {
+				$sqlRegister = "INSERT INTO utilisateurs (login, password, email, firstname, lastname)
+                                VALUES (?, ?, ?, ?, ?)";
+
+                $stmt = $this->mysqli->prepare($sqlRegister);
+                $stmt->bind_param('sssss', $saLogin, $pHash, $saEmail, $saFirstname, $saLastname);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                // print_r_pre($result, '$result:');
+                // $user = $result->fetch_assoc();
+
+                $sqlReturn = "SELECT * FROM utlisateurs WHERE login = ? AND password = ?";
+
+                $stmt = $this->mysqli->prepare($sqlReturn);
+                $stmt->bind_param('ss', $saLogin, $pHash);
+                $stmt->execute();
+                $result = $stmt->get_result(); 
+                $userInfo = $result->fetch_assoc(); 
+
+                echo '<p style="color:red;text-transform:uppercase;">Profil enregistré avec succès.</p>';
+        		return $userInfo;
 			}
 			else { 
-                return false;
+                echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
+                exit(1);
             }
-		}
- 
-
+		
         }
         public function connect($login, $password) {
             // Connecte l’utilisateur, modifie les attributs présents dans la classe et
@@ -100,16 +135,18 @@
 
         }
         public function __destruct() {
-            $this->dbclosing = mysqli_close($this->dbc);
 
-            controlData($this->dbclosing, '$dbclosing');
+            $this->mysqli->close();
 
-            if ($this->dbclosing) {
-                echo '<p style="color:green">Succesfully disconnected.</p>';
+            // print_r_pre($this->mysqli, '$mysqli->close:');
+
+            if ($this->mysqli) {
+                echo '<p style="color:green;text-transform:uppercase;">Succesfully disconnected.</p>';
+                return;
             }
             else {
-                echo '<p style="color:red">problem while disconnecting.</p>';
-                exit();
+                echo '<p style="color:red;text-transform:uppercase;">problem while disconnecting.</p>';
+                exit(1);
             }
         }
     }
