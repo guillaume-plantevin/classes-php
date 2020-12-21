@@ -13,7 +13,6 @@
 
         function constructeur($host, $username, $password, $db) {
             // Les paramètres sont optionnels. Ouvre une connexion à un serveur MySQL.
-
         }
         function connect($host, $username, $password, $db) {
             // Ferme la connexion au serveur SQL en cours s’il y en a une et en ouvre une nouvelle.

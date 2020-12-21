@@ -4,8 +4,6 @@
         NOTE:
         Vos requêtes SQL doivent être faites à l’aide des fonctions mysqli*.
     */
-
-    // require_once('connect.php');
     class user {
         private $id;
 
@@ -16,17 +14,12 @@
         public $lastname;
 
         private $mysqli;
-        // private $dbclosing;
 
         public $host = 'localhost';
-        // public $port = 3306;
         public $db   = 'classes';
         public $user = 'root';
         public $pass = '';
-        // public $charset = 'utf8mb4';
-        // public $charset = 'utf8';
         
-        // 
         public function __construct() {
             $this->mysqli = new mysqli($this->host, $this->user, $this->pass, $this->db);
             
@@ -76,16 +69,17 @@
                 // print_r_pre($result, '$result:');
                 // $user = $result->fetch_assoc();
 
-                $sqlReturn = "SELECT * FROM utlisateurs WHERE login = ? AND password = ?";
+                $sqlReturn = "SELECT * FROM utilisateurs WHERE login = ? AND password = ?";
 
                 $stmt = $this->mysqli->prepare($sqlReturn);
                 $stmt->bind_param('ss', $saLogin, $pHash);
                 $stmt->execute();
-                $result = $stmt->get_result(); 
-                $userInfo = $result->fetch_assoc(); 
+                // $result = $stmt->get_result(); 
+                // $userInfo = $result->fetch_assoc(); 
+                $user = $stmt->get_result()->fetch_assoc();
 
                 echo '<p style="color:red;text-transform:uppercase;">Profil enregistré avec succès.</p>';
-        		return $userInfo;
+        		return $user;
 			}
 			else { 
                 echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
