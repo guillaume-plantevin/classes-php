@@ -39,7 +39,7 @@
             // EXISTE déjà
             if (!empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce login et/ou email sont déjà utilisés.</p>';
-                return;
+                exit(1);
             }
             // N'EXISTE PAS ==> CREATION
             else {
@@ -74,25 +74,20 @@
             $stmt = $this->pdo->prepare($verifying);
 
             $inputLogin = htmlentities($login);
-            // $inputHash = password_hash(htmlentities($password), PASSWORD_DEFAULT);
 
-            // echo 'inpuHash: ' . $inputHash;
             $stmt->execute(array (
                 ':login' => $inputLogin
             ));
                 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // DEBUG
-            // print_r_pre($user, '$user from DB:');
-
             if (empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce compte n\'existe pas ou les informations fournies ne sont pas exactes.</p>';
-                return FALSE;
+                exit(1);
             }
-            else if (!password_verify($password, $user['password'])) {
+            else if (!password_verify(htmlentities($password), $user['password'])) {
                 echo '<p style="color:red;text-transform:uppercase;">Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
-                return FALSE;
+                exit(1);
             }
             else {
                 // change les attributs
@@ -121,6 +116,7 @@
             }
             else {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est as connecté.</p>';
+                exit(1);
             }
         }
 
@@ -129,7 +125,7 @@
 
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                return;
+                exit(1);
             }
             else {
                 $sql = "DELETE FROM utilisateurs WHERE id = :id";
@@ -156,7 +152,7 @@
 
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                return;
+                exit(1);
             }
             else {
                 $sql = "UPDATE utilisateurs 
@@ -186,8 +182,8 @@
         }
 
         public function isConnected​() {
-            // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.  
-            // var_dump_pre($this->login, '$this->login');
+            // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.
+
             if (empty($this->id) && !isset($this->id)) {
                 return FALSE;
             }
@@ -200,7 +196,7 @@
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
-                return;
+                exit(1);
             }
             else {
                 $infoUser = [
@@ -219,7 +215,7 @@
             // Retourne l’adresse email de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                return FALSE;
+                exit(1);
             }
             else
                 return $this->email;
@@ -229,7 +225,7 @@
             // Retourne le firstname de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                return FALSE;
+                exit(1);
             }
             else
                 return $this->firstname;
@@ -239,7 +235,7 @@
             // Retourne le lastname de l’utilisateur connecté.
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                return FALSE;
+                exit(1);
             }
             else
                 return $this->lastname;
@@ -249,7 +245,7 @@
             // Met à jour les attributs de la classe à partir de la base de données.
             if (empty($this->id) && !isset($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                return;
+                exit(1);
             }
             else {
                 $sql = "SELECT * FROM utilisateurs WHERE id = :id";
