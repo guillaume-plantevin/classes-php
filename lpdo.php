@@ -1,4 +1,5 @@
 <?php 
+
     /*
         Consignes:
         Créez un fichier nommé “lpdo.php”. Dans ce fichier, créez une classe
@@ -9,20 +10,32 @@
         Vous êtes libres concernant les attributs présents dans cette classe, mais
         ils doivent être privés.
     */
+    require_once('functions/functions.php');
     class lpdo {
+
+        private $dbcon;
 
         function constructeur($host, $username, $password, $db) {
             // Les paramètres sont optionnels. Ouvre une connexion à un serveur MySQL.
+            
+            $this->dbcon = new mysqli($host, $username, $password, $db);
+
+            if ($this->dbcon->connect_error) {
+                echo '<p style="color:red;text-transform:uppercase;">Échec de la connexion:</p>';
+                die("$this->dbcon->connect_errno: $this->dbcon->connect_error");
+            }
+            echo '<p style="color:green;text-transform:uppercase;">Connexion (DB) réussie.</p>';
+            
         }
         function connect($host, $username, $password, $db) {
             // Ferme la connexion au serveur SQL en cours s’il y en a une et en ouvre une nouvelle.
-            /*
-                if (already connected)
-                    close connection
-                else {
-                    open connection
-                }
-
+            var
+            if (!empty($this->dbcon) && isset($this->dbcon))
+                $this->dbcon->close();
+            else {
+                $this->constructeur($host, $username, $password, $db);
+            }
+            
         }
         function destructeur() {
             // Ferme la connexion au serveur MySQL.

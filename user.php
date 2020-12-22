@@ -98,7 +98,8 @@
                 exit(1);
             }
             else if (!password_verify(htmlentities($password), $user['password'])) {
-                echo '<p style="color:red;text-transform:uppercase;">Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">
+                        Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
                 exit(1);
             }
             else {
@@ -207,7 +208,8 @@
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
 
             if (empty($this->id) && !isset($this->id)) {
-                echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
+                echo '<p style="color:red;text-transform:uppercase;">
+                        Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
                 exit(1);
             }
             else {
@@ -269,28 +271,28 @@
             }
 
         }
-        public function __destruct() {
-            $this->mysqli->close();
+        // public function __destruct() {
+        //     $this->mysqli->close();
 
-            $allInfoUser = [
-                'id' => $this->id,
-                'login' => $this->login,
-                'password' => $this->password,
-                'email' => $this->email,
-                'firstname' => $this->firstname,
-                'lastname' => $this->lastname
-            ];
-            /* DEBUG */
-            print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
-            // print_r_pre($this->mysqli, '$mysqli->close:');
+        //     $allInfoUser = [
+        //         'id' => $this->id,
+        //         'login' => $this->login,
+        //         'password' => $this->password,
+        //         'email' => $this->email,
+        //         'firstname' => $this->firstname,
+        //         'lastname' => $this->lastname
+        //     ];
+        //     /* DEBUG */
+        //     print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
+        //     // print_r_pre($this->mysqli, '$mysqli->close:');
 
-            if ($this->mysqli) {
-                echo '<p style="color:green;text-transform:uppercase;">Succesfully disconnected.</p>';
-                return;
-            }
-            else {
-                echo '<p style="color:red;text-transform:uppercase;">problem while disconnecting.</p>';
-                exit(1);
-            }
-        }
+        //     if ($this->mysqli) {
+        //         echo '<p style="color:green;text-transform:uppercase;">Succesfully disconnected.</p>';
+        //         return;
+        //     }
+        //     else {
+        //         echo '<p style="color:red;text-transform:uppercase;">problem while disconnecting.</p>';
+        //         exit(1);
+        //     }
+        // }
     }
