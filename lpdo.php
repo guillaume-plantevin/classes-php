@@ -1,5 +1,4 @@
 <?php 
-
     /*
         Consignes:
         Créez un fichier nommé “lpdo.php”. Dans ce fichier, créez une classe
@@ -29,10 +28,17 @@
         }
         function connect($host, $username, $password, $db) {
             // Ferme la connexion au serveur SQL en cours s’il y en a une et en ouvre une nouvelle.
-            var
-            if (!empty($this->dbcon) && isset($this->dbcon))
-                $this->dbcon->close();
+            // DEBUG
+            // var_dump_pre(empty($this->dbcon), '!empty($this->dbcon)');
+            // var_dump_pre(isset($this->dbcon), 'isset($this->dbcon)');
+            
+            if (empty($this->dbcon) || !isset($this->dbcon)) {
+                // echo 'Im in IF<br>';
+                $this->constructeur($host, $username, $password, $db);
+            }
             else {
+                // echo 'im in ELSE<br>';
+                $this->dbcon->close();
                 $this->constructeur($host, $username, $password, $db);
             }
             
