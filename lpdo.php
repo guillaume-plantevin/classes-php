@@ -88,12 +88,63 @@
             $query = "SHOW TABLES";
             $result = $this->dbcon->query($query);
             $returnedData = $result->fetch_all(MYSQLI_ASSOC);
-            return $returnedData;
+            if (empty($returnedData)) 
+                echo '<p style="color:red;text-transform:uppercase;">[GET_TABLES] le retour de la requête est vide.</p>';
+            else 
+                return $returnedData;
+
 
         }
         function getFields($table) {
             // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
             // false en cas d’erreur.
+
+            // Pour une raison encore inconnue, je ne pouvais pas bind_param sur cette requete meme apres de multiples essais
+            /* Prepared statement, stage 1: prepare */
+            if (!($stmt = $this->dbcon->prepare("DESCRIBE $table"))) {
+                echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
+            }
+
+            if (!$stmt->execute()) {
+                echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+            }
+            $return = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+
+            if (empty($return)) {
+                echo '<p style="color:red;text-transform:uppercase;">[GET_FIELDS] le retour de la requête est vide.</p>';
+                return false;
+            }
+            else 
+                return $return;
+        }
+        function getFields2($table) {
+            // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
+            // false en cas d’erreur.
+
+            // NE MARCHE PAS
+
+            /* Prepared statement, stage 1: prepare */
+            if (!($stmt = $this->dbcon->prepare("DESCRIBE ?"))) {
+                echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
+            }
+
+            /* Prepared statement, stage 2: bind and execute */
+            // $id = 49;
+            if (!$stmt->bind_param("i", $table)) {
+                echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+            }
+
+            if (!$stmt->execute()) {
+                echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+            }
+            $return = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            // PROBLEME SUR LE RETOUR EN FALSE: NE MARCHE PAS
+            if (!$return) {
+                echo '<p style="color:red;text-transform:uppercase;">[GET_FIELDS] le retour de la requête est vide.</p>';
+                return false;
+            }
+            else 
+                return $return;
         }
         function __destruct() {
             // Ferme la connexion au serveur MySQL.

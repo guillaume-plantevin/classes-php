@@ -106,7 +106,7 @@
         public function disconnect​() {
             // Déconnecte l’utilisateur.
 
-            if (isset($this->login) && !empty($this->login)) {
+            if (empty($this->login)) {
                 $this->id = null;
                 $this->login = null;
                 $this->password = null;
@@ -123,7 +123,7 @@
         public function delete() {
             // Supprime et déconnecte l’utilisateur.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -150,7 +150,7 @@
         public function update​($login, $password, $email, $firstname, $lastname) {
             // Modifie les informations de l’utilisateur en base de données.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -184,7 +184,7 @@
         public function isConnected​() {
             // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 return FALSE;
             }
             else {
@@ -194,7 +194,7 @@
 
         public function getAllInfos() {
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -213,7 +213,7 @@
 
         public function getEmail() {
             // Retourne l’adresse email de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -223,7 +223,7 @@
 
         public function getFirstname() {
             // Retourne le firstname de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -233,7 +233,7 @@
 
         public function getLastname() {
             // Retourne le lastname de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -243,7 +243,7 @@
 
         public function refresh() {
             // Met à jour les attributs de la classe à partir de la base de données.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }

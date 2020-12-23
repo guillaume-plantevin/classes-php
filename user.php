@@ -53,16 +53,20 @@
             $user = $stmt->get_result()->fetch_assoc();
 
 			//if the username is not in db then insert to the table
-			if (empty($user)) {
-				$sqlRegister = "INSERT INTO utilisateurs (login, password, email, firstname, lastname)
+			if (!empty($user)) {
+                echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
+                exit(1);
+			}
+			else { 
+                $register = "INSERT INTO utilisateurs (login, password, email, firstname, lastname)
                                 VALUES (?, ?, ?, ?, ?)";
 
-                $stmt = $this->mysqli->prepare($sqlRegister);
+                $stmt = $this->mysqli->prepare($register);
                 $stmt->bind_param('sssss', $saLogin, $pHash, $saEmail, $saFirstname, $saLastname);
                 $stmt->execute();
                 // $user = $stmt->get_result()->fetch_assoc();
                 
-                // return what the DB has received
+                // retourne ce que la DB a reçu
                 $sqlReturn = "SELECT * FROM utilisateurs WHERE login = ? AND password = ?";
 
                 $stmt = $this->mysqli->prepare($sqlReturn);
@@ -72,12 +76,7 @@
 
                 echo '<p style="color:green;text-transform:uppercase;">Profil enregistré avec succès.</p>';
         		return $user;
-			}
-			else { 
-                echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
-                exit(1);
             }
-		
         }
         public function connect($login, $password) {
             // Connecte l’utilisateur, modifie les attributs présents dans la classe et
@@ -137,7 +136,7 @@
         public function delete() {
             // Supprime et déconnecte l’utilisateur.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -147,7 +146,6 @@
                 $stmt = $this->mysqli->prepare($sql);
                 $stmt->bind_param('d', $this->id);
                 $stmt->execute();
-
 
                 $this->id = null;
                 $this->login = null;
@@ -165,7 +163,7 @@
         public function update​($login, $password, $email, $firstname, $lastname) {
             // Modifie les informations de l’utilisateur en base de données.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -198,7 +196,7 @@
         public function isConnected​() {
             // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.   
             
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 return FALSE;
             }
             else {
@@ -209,7 +207,7 @@
         public function getAllInfos() {
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
 
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">
                         Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
                 exit(1);
@@ -228,7 +226,7 @@
         }
         public function getEmail() {
             // Retourne l’adresse email de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -237,7 +235,7 @@
         }
         public function getFirstname() {
             // Retourne le firstname de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -246,7 +244,7 @@
         }
         public function getLastname() {
             // Retourne le lastname de l’utilisateur connecté.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
                 exit(1);
             }
@@ -255,7 +253,7 @@
         }
         public function refresh() {
             // Met à jour les attributs de la classe à partir de la base de données.
-            if (empty($this->id) && !isset($this->id)) {
+            if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
                 exit(1);
             }
