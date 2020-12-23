@@ -3,6 +3,7 @@
     /*
         NOTE:
         Vos requêtes SQL doivent être faites à l’aide des fonctions mysqli*.
+        
     */
     class user {
         private $id;
@@ -120,6 +121,7 @@
             // Déconnecte l’utilisateur.
 
             if (isset($this->login) && !empty($this->login)) {
+
                 $this->id = null;
                 $this->login = null;
                 $this->password = null;
