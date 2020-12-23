@@ -85,7 +85,11 @@
         }
         function getTables() {
             // Retourne un tableau contenant la liste des tables présentes dans la base de données.
-            
+            $query = "SHOW TABLES";
+            $result = $this->dbcon->query($query);
+            $returnedData = $result->fetch_all(MYSQLI_ASSOC);
+            return $returnedData;
+
         }
         function getFields($table) {
             // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
