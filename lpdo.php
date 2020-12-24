@@ -11,7 +11,7 @@
 
         NOTE DE L'ETUDIANT:
         Je ne suis pas certain d'avoir compris le but n'aillant utilisé mysqli 
-        qu'en mode objet et non2 en procédurale, du coup j'ai naturellement un code orienté objet...
+        qu'en mode objet et non en procédurale, du coup j'avais déjà un code orienté objet...
     */
     require_once('functions/functions.php');
     class lpdo {
@@ -64,6 +64,7 @@
             // Exécute la requête $query et retourne un tableau contenant la réponse du serveur SQL.
             
             $result = $this->dbcon->query($query);
+
             $returnedData = $result->fetch_all(MYSQLI_ASSOC);
 
             if (empty($returnedData)) {
@@ -95,27 +96,32 @@
 
 
         }
+        // ERROR
         function getFields($table) {
             // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
             // false en cas d’erreur.
 
             // Pour une raison encore inconnue, je ne pouvais pas bind_param sur cette requete meme apres de multiples essais
+            // putain... marche plus... 
+            // NE FONCTIONNE PLUS
             /* Prepared statement, stage 1: prepare */
-            if (!($stmt = $this->dbcon->prepare("DESCRIBE $table"))) {
+            if (!($stmt = $this->dbcon->prepare("SHOW FULL COLUMNS FROM $table"))) {
                 echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
+                return false;
             }
 
             if (!$stmt->execute()) {
                 echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+                return false;
             }
-            $return = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            $returnedData = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 
             if (empty($return)) {
                 echo '<p style="color:red;text-transform:uppercase;">[GET_FIELDS] le retour de la requête est vide.</p>';
                 return false;
             }
             else 
-                return $return;
+                return $returnedData;
         }
         function getFields2($table) {
             // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
@@ -124,18 +130,21 @@
             // NE MARCHE PAS
 
             /* Prepared statement, stage 1: prepare */
-            if (!($stmt = $this->dbcon->prepare("DESCRIBE ?"))) {
+            if (!($stmt = $this->dbcon->prepare("SHOW FULL COLUMNS FROM ?"))) {
                 echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
+                return false;
             }
 
             /* Prepared statement, stage 2: bind and execute */
             // $id = 49;
-            if (!$stmt->bind_param("i", $table)) {
+            if (!$stmt->bind_param("s", $table)) {
                 echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+                return false;
             }
 
             if (!$stmt->execute()) {
                 echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+                return false;
             }
             $return = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
             // PROBLEME SUR LE RETOUR EN FALSE: NE MARCHE PAS
