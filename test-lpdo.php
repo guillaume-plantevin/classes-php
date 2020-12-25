@@ -12,6 +12,8 @@
     // print_r_pre($user1->execute("SELECT * FROM utilisateurs WHERE id = 343"), 'execute($query):');
     // print_r_pre($user1->execute("SELECT * FROM utilisateurs"), 'execute($query):');
     // print_r_pre($user1->getTables(), '$user1->getTables(): ');
+    // print_r_pre($user1->getFields('utilisateurs'), '$user1->getFields(): ');
+    // print_r_pre($user1->getFields3('utilisateurs'), '$user1->getFields3(): ');
+    // print_r_pre($user1->getFields2('utilisateurs'), '$user1->getFields2(): ');
     print_r_pre($user1->getFields('utilisateurs'), '$user1->getFields(): ');
-    print_r_pre($user1->getFields2('utilisateurs'), '$user1->getFields2(): ');
 ?>

@@ -8,10 +8,6 @@
         NOTE:
         Vous êtes libres concernant les attributs présents dans cette classe, mais
         ils doivent être privés.
-
-        NOTE DE L'ETUDIANT:
-        Je ne suis pas certain d'avoir compris le but n'aillant utilisé mysqli 
-        qu'en mode objet et non en procédurale, du coup j'avais déjà un code orienté objet...
     */
     require_once('functions/functions.php');
     class lpdo {
@@ -105,7 +101,8 @@
             // putain... marche plus... 
             // NE FONCTIONNE PLUS
             /* Prepared statement, stage 1: prepare */
-            if (!($stmt = $this->dbcon->prepare("SHOW FULL COLUMNS FROM $table"))) {
+            $query = "SHOW COLUMNS FROM {$table}";
+            if (!($stmt = $this->dbcon->prepare($query))) {
                 echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
                 return false;
             }
@@ -130,7 +127,7 @@
             // NE MARCHE PAS
 
             /* Prepared statement, stage 1: prepare */
-            if (!($stmt = $this->dbcon->prepare("SHOW FULL COLUMNS FROM ?"))) {
+            if (!($stmt = $this->dbcon->prepare('DESCRIBE ?'))) {
                 echo "Prepare failed: (" . $this->dbcon->errno . ") " . $this->dbcon->error;
                 return false;
             }
@@ -154,6 +151,13 @@
             }
             else 
                 return $return;
+        }
+        function getFields3($table) {
+            $stmt = $this->dbcon->prepare('DESCRIBE ?');
+            $stmt->bind_param('s', $table);
+            $stmt->execute();
+            $returnedData = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+            return $returnedData;
         }
         function __destruct() {
             // Ferme la connexion au serveur MySQL.
