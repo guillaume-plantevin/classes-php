@@ -36,8 +36,9 @@
             // var_dump_pre($this->mysqli, '$this->mysqli');
 
             if (isset($this->mysqli) && $this->mysqli->ping()) {
-                // echo '38: ping: OK + $this->mysqli isset';
+                
                 $this->mysqli->close();
+
                 $this->mysqli = new mysqli($host, $username, $password, $db);
 
                 if ($this->mysqli->connect_errno) {
@@ -58,6 +59,23 @@
                 }
                 else {
                     echo '<p>(connect) connexion-DB: OK</p>';
+                    return TRUE;
+                }
+            }
+        }
+        public function destructeur() {
+            // Ferme la connexion au serveur MySQL.
+            if (!isset($this->mysqli)) {
+                echo '<p>69: connection is not set.</p>';
+                return FALSE;
+            }
+            else {
+                if (!$this->mysqli->close()) {
+                    echo '<p>(destructeur) can\'t close connection</p>';
+                    return FALSE;
+                }
+                else {
+                    echo '<p>(destructeur) connexion-DB: CLOSED</p>';
                     return TRUE;
                 }
             }
