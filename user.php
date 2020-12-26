@@ -4,114 +4,263 @@
         NOTE:
         Vos requêtes SQL doivent être faites à l’aide des fonctions mysqli*.
     */
-
-    // require_once('connect.php');
     class user {
-        private $id = '';
-        public $login = '';
-        public $email = '';
-        public $password = '';
-        public $firstname = '';
-        public $lastname = '';
+        private $id;
 
-        private $dbc;
-        private $dbclosing;
+        public $login;
+        public $email;
+        public $password;
+        public $firstname;
+        public $lastname;
 
-        public $host = '127.0.0.1';
-        // public $port = 3306;
-        public $db   = 'classes';
-        public $user = 'root';
-        public $pass = '';
-        // public $charset = 'utf8mb4';
-        // public $charset = 'utf8';
+        private $mysqli;
 
-        // 
         public function __construct() {
-            $this->dbc = mysqli_connect($this->host, $this->user, $this->pass, $this->db);
+            $host = 'localhost';
+            $db   = 'classes';
+            $user = 'root';
+            $pass = '';
 
-            // controlData($this->dbc, '$dbc');
-            if ($this->dbc) {
-                echo "<p style='color:green'>connection established</p>";
+            $this->mysqli = new mysqli($host, $user, $pass, $db);
+            
+            if ($this->mysqli->connect_error) {
+                echo '<p style="color:red;text-transform:uppercase;">Échec de la connexion:</p>';
+                die("$this->mysqli->connect_errno: $this->mysqli->connect_error");
             }
-            else {
-                print '<p style="color:red;">Could not connect to the database:<br>' . mysqli_connect_error() . '.</p>';
-                exit();
-            }
+            echo '<p style="color:green;text-transform:uppercase;">Connexion (DB) réussie.</p>';
         }
 
         public function register($login, $password, $email, $firstname, $lastname) {
             // Crée l’utilisateur en base de données. 
             // Retourne un tableau(array) contenant l’ensemble des informations concernant l’utilisateur créé.
 
+            // sanitize input data
+            $saLogin = htmlentities($login);
+            $pHash = password_hash($password, PASSWORD_DEFAULT);
+            $saEmail = htmlentities($email);
+            $saFirstname = htmlentities($firstname);
+            $saLastname = htmlentities($lastname);
+            
+            $sql = "SELECT * FROM utilisateurs WHERE login = ? OR email = ?"; 
 
-            // $stmt = $this->dbc->prepare("SELECT * FROM utlisateurs WHERE login = ?");
-            $stmt = $this->dbc->prepare("INSERT INTO utilisateurs (login, password, email, firstname, lastname) 
-                                        VALUES ($this->login, $this->password, $this->email, $this->firstname, $this->lastname);");
-
-            $stmt->bind_param("sssss", $this->login, $this->password, $this->email, $this->firstname, $this->lastname);
+            $stmt = $this->mysqli->prepare($sql); 
+            $stmt->bind_param('ss', $saLogin, $saEmail);
             $stmt->execute();
-            $reg = $stmt->get_result()->fetch_assoc();
+            $user = $stmt->get_result()->fetch_assoc();
 
+			if (!empty($user)) {
+                echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
+                return FALSE;
+			}
+			else { 
+                $register = "INSERT INTO utilisateurs (login, password, email, firstname, lastname)
+                                VALUES (?, ?, ?, ?, ?)";
 
-            // $query = "INSERT INTO utilisateurs (login, password, email, firstname, lastname) 
-            //             VALUES ($this->login, $this->password, $this->email, $this->firstname, $this->lastname);";
-            // $query = 'INSERT INTO utilisateurs (login, password) VALUES ("toto", "123123")';
-            // $reg = mysqli_query($this->dbc, $query);
-            controlData($reg, '$reg');
-            var_dump($reg);
+                $stmt = $this->mysqli->prepare($register);
+                $stmt->bind_param('sssss', $saLogin, $pHash, $saEmail, $saFirstname, $saLastname);
+                $stmt->execute();
+                
+                // retourne ce que la DB a reçu
+                $sqlReturn = "SELECT * FROM utilisateurs WHERE login = ? AND password = ?";
+
+                $stmt = $this->mysqli->prepare($sqlReturn);
+                $stmt->bind_param('ss', $saLogin, $pHash);
+                $stmt->execute();
+                $user = $stmt->get_result()->fetch_assoc();
+
+                echo '<p style="color:green;text-transform:uppercase;">Profil enregistré avec succès.</p>';
+        		return $user;
+            }
         }
         public function connect($login, $password) {
             // Connecte l’utilisateur, modifie les attributs présents dans la classe et
             // retourne un tableau contenant l’ensemble de ses informations.
- 
+
+            $saLogin = htmlentities($login);
+
+            // VERIFIER que l'utilisateur existe en DB
+            $verifying = "SELECT * FROM utilisateurs WHERE login = ?";
+
+            $stmt = $this->mysqli->prepare($verifying); 
+            $stmt->bind_param('s', $saLogin);
+            $stmt->execute();
+            $user = $stmt->get_result()->fetch_assoc();
+
+            if (empty($user)) {
+                echo '<p style="color:red;text-transform:uppercase;">Ce login n\'existe pas.</p>';
+                return FALSE;
+            }
+            else if (!password_verify(htmlentities($password), $user['password'])) {
+                echo '<p style="color:red;text-transform:uppercase;">
+                        Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
+                return FALSE;
+            }
+            else {
+                // change les attributs
+                foreach ($user as $key => $value) {
+                    $this->$key = $value;
+                }
+                // garde en memoire le mot de passe et non pas le hash
+                $this->password = htmlentities($password);
+
+                // renvoi le mot de passe enregistré et non pas le hash
+                $user['password'] = htmlentities($password);
+
+                return $user;
+            }
         }
         public function disconnect​() {
             // Déconnecte l’utilisateur.
 
+            if (isset($this->login) && !empty($this->login)) {
+
+                $this->id = null;
+                $this->login = null;
+                $this->password = null;
+                $this->email = null;
+                $this->firstname = null;
+                $this->lastname = null;
+            }
+            else {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est as connecté.</p>';
+                return FALSE;
+            }
         }
         public function delete() {
             // Supprime et déconnecte l’utilisateur.
+
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else {
+                $sql = "DELETE FROM utilisateurs WHERE id = ?";
+                
+                $stmt = $this->mysqli->prepare($sql);
+                $stmt->bind_param('d', $this->id);
+                $stmt->execute();
+
+                $this->id = null;
+                $this->login = null;
+                $this->password = null;
+                $this->email = null;
+                $this->firstname = null;
+                $this->lastname = null;
+
+                // FLASH msg
+                echo '<p style="color:green;text-transform:uppercase;">Profil supprimé avec succès!.</p>';
+                return;
+            }
 
         }
         public function update​($login, $password, $email, $firstname, $lastname) {
             // Modifie les informations de l’utilisateur en base de données.
 
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else {
+                $sql = "UPDATE utilisateurs 
+                        SET 
+                        login = ?, 
+                        password = ?, 
+                        email = ?, 
+                        firstname = ?,
+                        lastname = ?
+                        WHERE 
+                        id = ?";
+
+                $saLogin = htmlentities($login);
+                $pHash = password_hash($password, PASSWORD_DEFAULT);
+                $saEmail = htmlentities($email);
+                $saFirstname = htmlentities($firstname);
+                $saLastname = htmlentities($lastname);
+
+                $stmt = $this->mysqli->prepare($sql);
+                $stmt->bind_param('sssssd', $saLogin, $pHash, $saEmail, $saFirstname, $saLastname, $this->id);
+                $stmt->execute();
+
+                echo '<p style="color:green;text-transform:uppercase;">Le profil mis à jour avec succès.</p>';
+                return;
+            }
+
         }
         public function isConnected​() {
-            // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.            
+            // Retourne un booléen permettant de savoir si un utilisateur est connecté ou non.   
+            
+            if (empty($this->id)) {
+                return FALSE;
+            }
+            else {
+                return TRUE;
+            }
 
         }
         public function getAllInfos() {
             // Retourne un tableau contenant l’ensemble des informations de l’utilisateur.
 
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">
+                        Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else {
+                $infoUser = [
+                    'id' => $this->id,
+                    'login' => $this->login,
+                    'password' => $this->password,
+                    'email' => $this->email,
+                    'firstname' => $this->firstname,
+                    'lastname' => $this->lastname
+                ];
+                return  $infoUser;
+            }
         }
         public function getEmail() {
             // Retourne l’adresse email de l’utilisateur connecté.
-
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->email;
         }
         public function getFirstname() {
             // Retourne le firstname de l’utilisateur connecté.
-
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->firstname;
         }
         public function getLastname() {
             // Retourne le lastname de l’utilisateur connecté.
-
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
+                return FALSE;
+            }
+            else
+                return $this->lastname;
         }
         public function refresh() {
             // Met à jour les attributs de la classe à partir de la base de données.
-
-        }
-        public function __destruct() {
-            $this->dbclosing = mysqli_close($this->dbc);
-
-            controlData($this->dbclosing, '$dbclosing');
-
-            if ($this->dbclosing) {
-                echo '<p style="color:green">Succesfully disconnected.</p>';
+            if (empty($this->id)) {
+                echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
+                return FALSE;
             }
             else {
-                echo '<p style="color:red">problem while disconnecting.</p>';
-                exit();
+                $sql = "SELECT * FROM utilisateurs WHERE id = ?";
+
+                $stmt = $this->mysqli->prepare($sql);
+                $stmt->bind_param('d', $this->id);
+                $stmt->execute();
+                $user = $stmt->get_result()->fetch_assoc();
+
+                foreach ($user as $key => $value) 
+                    $this-> $key = $value;
+                echo '<p style="color:green;text-transform:uppercase;">Attributs mis à jour avec succès.</p>';
             }
         }
     }

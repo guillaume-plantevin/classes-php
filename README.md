@@ -1,2 +1,2 @@
 # classes-php
-Guillaume Plantevin, Coding School @LaPlateforme_
+Guillaume Plantevin, Coding School 2020 @LaPlateforme_
