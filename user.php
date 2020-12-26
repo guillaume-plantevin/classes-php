@@ -3,7 +3,6 @@
     /*
         NOTE:
         Vos requêtes SQL doivent être faites à l’aide des fonctions mysqli*.
-        
     */
     class user {
         private $id;
@@ -24,13 +23,11 @@
 
             $this->mysqli = new mysqli($host, $user, $pass, $db);
             
-            // Check connection
             if ($this->mysqli->connect_error) {
                 echo '<p style="color:red;text-transform:uppercase;">Échec de la connexion:</p>';
                 die("$this->mysqli->connect_errno: $this->mysqli->connect_error");
             }
             echo '<p style="color:green;text-transform:uppercase;">Connexion (DB) réussie.</p>';
-            // echo "Host info: " . $this->mysqli->host_info;
         }
 
         public function register($login, $password, $email, $firstname, $lastname) {
@@ -49,13 +46,11 @@
             $stmt = $this->mysqli->prepare($sql); 
             $stmt->bind_param('ss', $saLogin, $saEmail);
             $stmt->execute();
-            // get the mysqli result & fetch as an associative array
             $user = $stmt->get_result()->fetch_assoc();
 
-			//if the username is not in db then insert to the table
 			if (!empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce login ou cet email ont déjà été utilisés.</p>';
-                exit(1);
+                return FALSE;
 			}
 			else { 
                 $register = "INSERT INTO utilisateurs (login, password, email, firstname, lastname)
@@ -64,7 +59,6 @@
                 $stmt = $this->mysqli->prepare($register);
                 $stmt->bind_param('sssss', $saLogin, $pHash, $saEmail, $saFirstname, $saLastname);
                 $stmt->execute();
-                // $user = $stmt->get_result()->fetch_assoc();
                 
                 // retourne ce que la DB a reçu
                 $sqlReturn = "SELECT * FROM utilisateurs WHERE login = ? AND password = ?";
@@ -90,17 +84,16 @@
             $stmt = $this->mysqli->prepare($verifying); 
             $stmt->bind_param('s', $saLogin);
             $stmt->execute();
-            // get the mysqli result & fetch as an associative array
             $user = $stmt->get_result()->fetch_assoc();
 
             if (empty($user)) {
                 echo '<p style="color:red;text-transform:uppercase;">Ce login n\'existe pas.</p>';
-                exit(1);
+                return FALSE;
             }
             else if (!password_verify(htmlentities($password), $user['password'])) {
                 echo '<p style="color:red;text-transform:uppercase;">
                         Le mot de passe que vous avez fourni ne correspond pas à celui enregistré.</p>';
-                exit(1);
+                return FALSE;
             }
             else {
                 // change les attributs
@@ -130,7 +123,7 @@
             }
             else {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est as connecté.</p>';
-                exit(1);
+                return FALSE;
             }
         }
         public function delete() {
@@ -138,7 +131,7 @@
 
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else {
                 $sql = "DELETE FROM utilisateurs WHERE id = ?";
@@ -165,7 +158,7 @@
 
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else {
                 $sql = "UPDATE utilisateurs 
@@ -210,7 +203,7 @@
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">
                         Le profil que vous essayez de voir les informations n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else {
                 $infoUser = [
@@ -228,7 +221,7 @@
             // Retourne l’adresse email de l’utilisateur connecté.
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else
                 return $this->email;
@@ -237,7 +230,7 @@
             // Retourne le firstname de l’utilisateur connecté.
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else
                 return $this->firstname;
@@ -246,7 +239,7 @@
             // Retourne le lastname de l’utilisateur connecté.
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Le profil désiré n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else
                 return $this->lastname;
@@ -255,7 +248,7 @@
             // Met à jour les attributs de la classe à partir de la base de données.
             if (empty($this->id)) {
                 echo '<p style="color:red;text-transform:uppercase;">Cet utilisateur n\'est pas connecté.</p>';
-                exit(1);
+                return FALSE;
             }
             else {
                 $sql = "SELECT * FROM utilisateurs WHERE id = ?";
@@ -269,30 +262,5 @@
                     $this-> $key = $value;
                 echo '<p style="color:green;text-transform:uppercase;">Attributs mis à jour avec succès.</p>';
             }
-
         }
-        // public function __destruct() {
-        //     $this->mysqli->close();
-
-        //     $allInfoUser = [
-        //         'id' => $this->id,
-        //         'login' => $this->login,
-        //         'password' => $this->password,
-        //         'email' => $this->email,
-        //         'firstname' => $this->firstname,
-        //         'lastname' => $this->lastname
-        //     ];
-        //     /* DEBUG */
-        //     print_r_pre($allInfoUser, 'RÉSUMÉ: ' . $this->login . ':');
-        //     // print_r_pre($this->mysqli, '$mysqli->close:');
-
-        //     if ($this->mysqli) {
-        //         echo '<p style="color:green;text-transform:uppercase;">Succesfully disconnected.</p>';
-        //         return;
-        //     }
-        //     else {
-        //         echo '<p style="color:red;text-transform:uppercase;">problem while disconnecting.</p>';
-        //         exit(1);
-        //     }
-        // }
     }

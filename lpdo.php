@@ -31,18 +31,16 @@
                 return FALSE;
             }
             else {
-                echo '<p>(__construct) connexion-DB: OK</p>';
+                echo '<p>(__construct) connexion-DB: OUVERTE</p>';
                 return TRUE;
             }
         }
         public function connect($host, $username, $password, $db) {
             // Ferme la connexion au serveur SQL en cours s’il y en a une et en ouvre une nouvelle.
-            // var_dump_pre($this->mysqli, '$this->mysqli');
 
             if (isset($this->mysqli) && $this->mysqli->ping()) {
                 
                 $this->mysqli->close();
-
                 $this->mysqli = new mysqli($host, $username, $password, $db);
 
                 if ($this->mysqli->connect_errno) {
@@ -50,7 +48,7 @@
                     return FALSE;
                 }
                 else {
-                    echo '<p>(connect) connexion-DB: OK</p>';
+                    echo '<p>(connect) connexion-DB: OUVERTE</p>';
                     return TRUE;
                 }
             }
@@ -62,7 +60,7 @@
                     return FALSE;
                 }
                 else {
-                    echo '<p>(connect) connexion-DB: OK</p>';
+                    echo '<p>(connect) connexion-DB: OUVERTE</p>';
                     return TRUE;
                 }
             }
@@ -70,38 +68,37 @@
         public function close() {
             // Ferme la connexion au serveur MySQL.
             if (!isset($this->mysqli)) {
-                echo '<p>69: connection is not set.</p>';
+                echo '<p>(close) la connexion n\'est pas itinialisée.</p>';
                 return FALSE;
             }
             else {
                 if (!$this->mysqli->close()) {
-                    echo '<p>(destructeur) can\'t close connection</p>';
+                    echo '<p>(close) Erreur lors de fermeture de la connexion</p>';
                     return FALSE;
                 }
                 else {
-                    echo '<p>(destructeur) connexion-DB: CLOSED</p>';
+                    echo '<p>(close) connexion-DB: FERMÉE</p>';
                     return TRUE;
                 }
             }
         }
         public function execute($query) {
             // Exécute la requête $query et retourne un tableau contenant la réponse du serveur SQL.
-            /* check connection */
             if ($this->mysqli->connect_errno) {
-                printf("Connect failed: %s\n", $this->mysqli->connect_error);
-                exit();
+                printf("(execute) Connect failed: %s\n", $this->mysqli->connect_error);
+                return FALSE;
             }
-            /* Select queries return a resultset */
-            if ($result = $this->mysqli->query($query)) {
-                
-                $this->lastQuery = $query;
-                // $this->getLastResult = $result;
+            $escQuery = $this->mysqli->real_escape_string($query);
+            
+            if (!$result = $this->mysqli->query($escQuery)) {
+                echo '<p>(execute) erreur lors de l\'exécution de la requête</p>';
+                return FALSE;
+            }
+            else {
+                $this->lastQuery = $escQuery;
                 $returnedData = $result->fetch_all(MYSQLI_ASSOC);
                 $this->lastResult = $returnedData;
                 return $returnedData;
-            }
-            else {
-                return FALSE;
             }
         }
         function getlastQuery() {
@@ -110,8 +107,8 @@
                 return $this->lastQuery;
             }
             else 
+                echo '<p>(getlastQuery) Aucune requête n\'a été réalisé précédemment.</p>';
                 return FALSE;
-            
         }
         function getLastResult() {
             // Retourne le résultat de la dernière requête SQL exécutée, false si aucune requête n’a été exécutée.
@@ -119,21 +116,47 @@
                 return $this->lastResult;
             }
             else 
+                echo '<p>(getLastResult) Aucune résultat n\'a été enregistré précédemment.</p>';
                 return FALSE;   
+        }
+        function getFields($table) {
+            // Retourne un tableau contenant la liste des champs présents dans la table passée en paramètre, 
+            // false en cas d’erreur.
+            if ($this->mysqli->connect_errno) {
+                printf("(getFields) Connect failed: %s\n", $this->mysqli->connect_error);
+                return FALSE;
+            }
+            // indispensable ?
+            $escTable = $this->mysqli->real_escape_string($table);
+
+            //  also: SHOW COLUMNS FROM
+            if (!$result = $this->mysqli->query("DESCRIBE {$escTable}")) {
+                echo '<p>(execute) erreur lors de l\'exécution de la requête</p>';
+                return FALSE;
+            }
+            else 
+                $returnedData = $result->fetch_all(MYSQLI_ASSOC);
+
+            if (empty($returnedData)) {
+                echo '<p style="color:red;text-transform:uppercase;">[GET_FIELDS] le retour de la requête est vide.</p>';
+                return FALSE;
+            }
+            else 
+                return $returnedData;
         }
         public function __destruct() {
             // Ferme la connexion au serveur MySQL.
             if (!isset($this->mysqli)) {
-                echo '<p>69: connection is not set.</p>';
+                echo '<p>(__destruct) la connexion n\'a pas été initialisé.</p>';
                 return FALSE;
             }
             else {
                 if (!$this->mysqli->close()) {
-                    echo '<p>(__destruct) can\'t close connection</p>';
+                    echo '<p>(__destruct) Erreur lors de fermeture de la connexion</p>';
                     return FALSE;
                 }
                 else {
-                    echo '<p>(__destruct) connexion-DB: CLOSED</p>';
+                    echo '<p>(__destruct) connexion-DB: FERMÉE</p>';
                     return TRUE;
                 }
             }
