@@ -11,23 +11,27 @@
     */
     require_once('functions/functions.php');
     class lpdo {
-        private $host = null;
-        private $username = null;
-        private $password = null;
-        private $db = null;
+        private $host = 'localhost';
+        private $username = 'root';
+        private $password = '';
+        private $db = 'classes';
 
         private $mysqli;
-        public function constructeur($host, $username, $password, $db) {
+
+        private $lastQuery = null;
+        private $lastResult = null;
+
+        public function __construct() {
             // Les paramètres sont optionnels. Ouvre une connexion à un serveur MySQL.
 
-            $this->mysqli = new mysqli($host, $username, $password, $db);
+            $this->mysqli = new mysqli($this->host, $this->username, $this->password, $this->db);
 
             if ($this->mysqli->connect_errno) {
-                echo '(constructeur) Failed to connected to MySQL' . $this->mysqli->connect_error;
+                echo '(__construct) Failed to connected to MySQL' . $this->mysqli->connect_error;
                 return FALSE;
             }
             else {
-                echo '<p>(constructeur) connexion-DB: OK</p>';
+                echo '<p>(__construct) connexion-DB: OK</p>';
                 return TRUE;
             }
         }
@@ -63,7 +67,7 @@
                 }
             }
         }
-        public function destructeur() {
+        public function close() {
             // Ferme la connexion au serveur MySQL.
             if (!isset($this->mysqli)) {
                 echo '<p>69: connection is not set.</p>';
@@ -76,6 +80,60 @@
                 }
                 else {
                     echo '<p>(destructeur) connexion-DB: CLOSED</p>';
+                    return TRUE;
+                }
+            }
+        }
+        public function execute($query) {
+            // Exécute la requête $query et retourne un tableau contenant la réponse du serveur SQL.
+            /* check connection */
+            if ($this->mysqli->connect_errno) {
+                printf("Connect failed: %s\n", $this->mysqli->connect_error);
+                exit();
+            }
+            /* Select queries return a resultset */
+            if ($result = $this->mysqli->query($query)) {
+                
+                $this->lastQuery = $query;
+                // $this->getLastResult = $result;
+                $returnedData = $result->fetch_all(MYSQLI_ASSOC);
+                $this->lastResult = $returnedData;
+                return $returnedData;
+            }
+            else {
+                return FALSE;
+            }
+        }
+        function getlastQuery() {
+            // Retourne la dernière requête SQL ayant été exécutée, false si aucune requête n’a été exécutée.
+            if (!empty($this->lastQuery)) {
+                return $this->lastQuery;
+            }
+            else 
+                return FALSE;
+            
+        }
+        function getLastResult() {
+            // Retourne le résultat de la dernière requête SQL exécutée, false si aucune requête n’a été exécutée.
+            if (!empty($this->lastResult)) {
+                return $this->lastResult;
+            }
+            else 
+                return FALSE;   
+        }
+        public function __destruct() {
+            // Ferme la connexion au serveur MySQL.
+            if (!isset($this->mysqli)) {
+                echo '<p>69: connection is not set.</p>';
+                return FALSE;
+            }
+            else {
+                if (!$this->mysqli->close()) {
+                    echo '<p>(__destruct) can\'t close connection</p>';
+                    return FALSE;
+                }
+                else {
+                    echo '<p>(__destruct) connexion-DB: CLOSED</p>';
                     return TRUE;
                 }
             }
